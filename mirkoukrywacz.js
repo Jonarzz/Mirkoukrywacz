@@ -1,8 +1,8 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name         Mikroblog: Ukryj wpis
 // @namespace    wykophidepost
 // @version      1.0.0
-// @description  Skrypt dodający na Mikroblogu Wykop.pl przycisk pozwalający na ukrywanie wpisów.
+// @description  Skrypt dodający na Mikroblogu Wykop.pl elementy pozwalające na ukrycie wybranych wpisów.
 // @author       zranoI
 // @include      /^https?:\/\/.*wykop\.pl\/mikroblog.*/
 // @require http://code.jquery.com/jquery-latest.js
