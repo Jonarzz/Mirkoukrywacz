@@ -4,6 +4,6 @@
 
 ###Skrypt dodający na Mikroblogu Wykop.pl elementy pozwalające na ukrycie wybranych wpisów.
 
-![Obrazek pokazujący działanie skryptu](http://i.imgur.com/iTvfhQH.png)
+![Obrazek pokazujący działanie skryptu](http://i.imgur.com/CdSPg3u.png)
 
 Skrypt zapisuje id ukrytych wpisów w ciasteczkach i wczytuje je przy załadowaniu strony. Możliwe jest wyczyszczenie listy (ciasteczka) ukrytych wpisów, dodana zostanie również funkcja usuwania pojedynczych wpisów z listy.

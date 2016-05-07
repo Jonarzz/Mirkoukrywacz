@@ -63,9 +63,11 @@ function createUnhideListItemCode(postId) {
 }
 
 function createUnhideMenu(unhideAllId) {
-    var htmlCode = '<div class="dropdown m-hide" style="margin-left: -40px; width: 200px; display: none;"><div><ul>';
+    var htmlCode = '<div id="unhide-menu-dropdown" class="dropdown m-hide" style="margin-left: -40px; width: 200px; display: none;"><div><ul>';
 
-    htmlCode += '<li><a style="text-align: center; cursor: pointer;" id="' + unhideAllId + '"><span><b>Wyczyść ukryte</b></span></a></li></ul>';
+    htmlCode += '<li><a style="text-align: center; cursor: pointer;" id="' + unhideAllId + '">Wyczyść ukryte</a></li>';
+    htmlCode += '<li><a style="text-align: center; cursor: pointer;" href="http://www.wykop.pl/dodatki/pokaz/867">O skrypcie</a></li>';
+    htmlCode += '</ul>';
 
     htmlCode += '<ul id="unhide-menu-list" style="max-height: 200px;">';
 
@@ -94,6 +96,12 @@ function createUnhideMenu(unhideAllId) {
 }
 
 function removeUnhideButtonsForId(postId) {
+    if ($("#unhide-menu-list li:last-child").attr('id') === "unhide-list-item-" + postId) {
+        window.hovertimeout = setTimeout(function () {
+            $("#unhide-menu-dropdown").hide();
+        }, 500);
+    }
+
     $("#unhide-list-item-" + postId).remove();
     $("#undo-button-" + postId).remove();
 }
@@ -189,10 +197,12 @@ function addHideButtons() {
         var button = $('<button class="button mikro" style="margin-left: 5px;">Ukryj wpis</button>');
 
         button.click(function () {
+            triggerLazyLoad();
+            
             var post = $("div.dC[data-id=" + postId + "]").parent();
-            var undoButton = $('<li id="undo-button-' + postId + '" style="width: 100%; margin-left: 5px;" class="button">Cofnij ukrycie</li>');
+            var undoButton = $('<li id="undo-button-' + postId + '" style="width: 100%;" class="button">Cofnij ukrycie</li>');
 
-            undoButton.click(function() { addUndoButtonClickHandler($(this), postId, post) });
+            undoButton.click(function() { addUndoButtonClickHandler($(this), postId, post); });
 
             post.after(undoButton);
             post.css("display", "none");
@@ -217,13 +227,20 @@ function addHideButtons() {
     });
 }
 
+function triggerLazyLoad() {
+    $("img").each(function() {
+        $(this).attr("src", $(this).attr("data-original"));
+    });
+}
+
 $(document).ready(function () {
     var hiddenIds = getCookie("hidden_ids").split(",");
-    console.log(hiddenIds);
+
     if (hiddenIds.indexOf("") === -1) {
         $.each(hiddenIds, function (index, value) {
             $("div.dC[data-id=" + value + "]").parent().css("display", "none");
         });
+        triggerLazyLoad();
     }
 
     addMainScriptButton();
