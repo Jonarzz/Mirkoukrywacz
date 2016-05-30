@@ -5,7 +5,7 @@
 // @description  Skrypt dodający na Mikroblogu Wykop.pl przycisk pozwalający na ukrywanie wpisów.
 // @author       zranoI
 // @include      /^https?:\/\/.*wykop\.pl\/mikroblog.*/
-// @require http://code.jquery.com/jquery-latest.js
+// @grant        none
 // ==/UserScript==
 
 
@@ -237,11 +237,12 @@ $(document).ready(function () {
     var hiddenIds = getCookie("hidden_ids").split(",");
 
     if (hiddenIds.indexOf("") === -1) {
-        $.each(hiddenIds, function (index, value) {
-            $("div.dC[data-id=" + value + "]").parent().css("display", "none");
-        });
-        triggerLazyLoad();
+       $.each(hiddenIds, function (index, value) {
+           $("div.dC[data-id=" + value + "]").parent().css("display", "none");
+       });
     }
+    
+    triggerLazyLoad();
 
     addMainScriptButton();
     addHideButtons();
