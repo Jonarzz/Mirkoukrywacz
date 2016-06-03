@@ -71,10 +71,12 @@ function createUnhideMenu(unhideAllId) {
 
     htmlCode += '<ul id="unhide-menu-list" style="max-height: 200px;">';
 
-    var hiddenIds = getCookie("hidden_ids").split(",");
-    if (isListEmpty(hiddenIds)) {
-        hiddenIds = [];
+    var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
+    if (isListEmpty(hiddenIdsWithDates)) {
+        hiddenIdsWithDates = [];
     }
+
+    hiddenIds = getHiddenIdsFromCookieList(hiddenIdsWithDates);
 
     $.each(hiddenIds, function (key, value) {
         htmlCode += createUnhideListItemCode(value);
@@ -112,10 +114,13 @@ function unhidePostWithId(id) {
 }
 
 function unhideAll() {
-    var hiddenIds = getCookie("hidden_ids").split(",");
-    if (isListEmpty(hiddenIds)) {
-        hiddenIds = [];
+    var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
+
+    if (isListEmpty(hiddenIdsWithDates)) {
+        hiddenIdsWithDates = [];
     }
+
+    hiddenIds = getHiddenIdsFromCookieList(hiddenIdsWithDates);
 
     $.each(hiddenIds, function (key, value) {
         unhidePostWithId(value);
@@ -128,14 +133,24 @@ function unhideAll() {
 function unhidePost(postId) {
     unhidePostWithId(postId);
 
-    var hiddenIds = getCookie("hidden_ids").split(",");
+    var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
 
-    if (isListEmpty(hiddenIds)) {
-        hiddenIds = [];
+    if (isListEmpty(hiddenIdsWithDates)) {
+        hiddenIdsWithDates = [];
     }
+    
+    var hiddenIds = getHiddenIdsFromCookieList(hiddenIdsWithDates);
+    var postIdAndDate = "";
+    
+    $.each(hiddenIdsWithDates, function(index, value) {
+        if (value.startsWith(postId)) {
+            postIdAndDate = value;
+            return false;
+        }
+    });
 
-    hiddenIds.splice(hiddenIds.indexOf(postId), 1);
-    createCookie("hidden_ids", hiddenIds.join(","), 1);
+    hiddenIdsWithDates.splice(hiddenIdsWithDates.indexOf(postIdAndDate), 1);
+    createCookie("hidden_ids", hiddenIdsWithDates.join(","), 1);
 }
 
 function addUnhideMenuButtonClickHandler(button) {
@@ -180,15 +195,25 @@ function addUndoButtonClickHandler(button, postId, post) {
     button.remove();
     $("#unhide-list-item-" + postId).remove();
 
-    var hiddenIds = getCookie("hidden_ids").split(",");
+    var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
 
-    if (isListEmpty(hiddenIds)) {
-        hiddenIds = [];
+    if (isListEmpty(hiddenIdsWithDates)) {
+        hiddenIdsWithDates = [];
     }
 
-    hiddenIds.splice(hiddenIds.indexOf(postId), 1);
+    hiddenIdsWithDates.splice(hiddenIdsWithDates.indexOf(postId), 1);
     post.css("display", "");
-    createCookie("hidden_ids", hiddenIds.join(","), 1);
+    createCookie("hidden_ids", hiddenIdsWithDates.join(","), 1);
+}
+
+function getHiddenIdsFromCookieList(hiddenIdsWithDates) {
+    var hiddenIds = [];
+
+    $.each(hiddenIdsWithDates, function(index, value) {
+        hiddenIds.push(value.split("|")[0]);
+    });
+
+    return hiddenIds;
 }
 
 function addHideButtons() {
@@ -198,11 +223,13 @@ function addHideButtons() {
 
         button.click(function () {
             triggerLazyLoad();
-            
+
             var post = $("div.dC[data-id=" + postId + "]").parent();
             var undoButton = $('<li id="undo-button-' + postId + '" style="width: 100%;" class="button">Cofnij ukrycie</li>');
 
-            undoButton.click(function() { addUndoButtonClickHandler($(this), postId, post); });
+            undoButton.click(function() {
+                addUndoButtonClickHandler($(this), postId, post);
+            });
 
             post.after(undoButton);
             post.css("display", "none");
@@ -210,17 +237,19 @@ function addHideButtons() {
             $("#unhide-menu-list").append($(createUnhideListItemCode(postId)));
             addUnhideMenuButtonClickHandler($("#unhide-post-" + postId));
 
-            var hiddenIds = getCookie("hidden_ids").split(",");
+            var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
 
-            if (isListEmpty(hiddenIds)) {
-                hiddenIds = [];
+            if (isListEmpty(hiddenIdsWithDates)) {
+                hiddenIdsWithDates = [];
             }
+
+            var hiddenIds = getHiddenIdsFromCookieList(hiddenIdsWithDates);
 
             if (hiddenIds.indexOf(postId) === -1) {
-                hiddenIds.push(postId);
+                hiddenIdsWithDates.push([postId, Date.now() / 1000 / 60 / 60 / 24].join("|"));
             }
 
-            createCookie("hidden_ids", hiddenIds.join(","), 1);
+            createCookie("hidden_ids", hiddenIdsWithDates.join(","), 1);
         });
 
         $(this).find("div > .author.ellipsis").children().eq(2).after(button);
@@ -233,15 +262,32 @@ function triggerLazyLoad() {
     });
 }
 
-$(document).ready(function () {
-    var hiddenIds = getCookie("hidden_ids").split(",");
+function removeOldCookieElements(hiddenIdsWithDates) {
+    var newHiddenIdsWithDates = [];
+    $.each(hiddenIdsWithDates, function (index, value) {
+        var date = value.split("|")[1];
+        if (Date.now() / 1000 / 60 / 60 / 24 - date < 1) {
+            newHiddenIdsWithDates.push(value);
+        }
+    });
 
-    if (hiddenIds.indexOf("") === -1) {
-       $.each(hiddenIds, function (index, value) {
-           $("div.dC[data-id=" + value + "]").parent().css("display", "none");
-       });
+    return newHiddenIdsWithDates;
+}
+
+$(document).ready(function () {
+    var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
+
+    hiddenIdsWithDates = removeOldCookieElements(hiddenIdsWithDates);
+    createCookie(createCookie("hidden_ids", hiddenIdsWithDates, 1));
+
+    if (hiddenIdsWithDates.indexOf("") === -1) {
+        var hiddenIds = getHiddenIdsFromCookieList(hiddenIdsWithDates);
+
+        $.each(hiddenIds, function (index, value) {
+            $("div.dC[data-id=" + value + "]").parent().css("display", "none");
+        });
     }
-    
+
     triggerLazyLoad();
 
     addMainScriptButton();
