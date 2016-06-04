@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Mirkoukrywacz
 // @namespace    wykophidepost
-// @version      1.0.0
+// @version      1.0.3
 // @description  Skrypt dodający na Mikroblogu Wykop.pl przycisk pozwalający na ukrywanie wpisów.
 // @author       zranoI
 // @include      /^https?:\/\/.*wykop\.pl\/mikroblog.*/
@@ -216,44 +216,61 @@ function getHiddenIdsFromCookieList(hiddenIdsWithDates) {
     return hiddenIds;
 }
 
-function addHideButtons() {
-    $(".entry.iC > div.dC").each(function () {
-        var postId = $(this).attr("data-id");
-        var button = $('<button class="button mikro" style="margin-left: 5px;">Ukryj wpis</button>');
+function hideButtonClickHandler(postId, addUndo) {
+    triggerLazyLoad();
 
-        button.click(function () {
-            triggerLazyLoad();
+    var post = $("div.dC[data-id=" + postId + "]").parent();
+    
+    if (addUndo) {
+        var undoButton = $('<li id="undo-button-' + postId + '" style="width: 100%;" class="button">Cofnij ukrycie</li>');
 
-            var post = $("div.dC[data-id=" + postId + "]").parent();
-            var undoButton = $('<li id="undo-button-' + postId + '" style="width: 100%;" class="button">Cofnij ukrycie</li>');
-
-            undoButton.click(function() {
-                addUndoButtonClickHandler($(this), postId, post);
-            });
-
-            post.after(undoButton);
-            post.css("display", "none");
-
-            $("#unhide-menu-list").append($(createUnhideListItemCode(postId)));
-            addUnhideMenuButtonClickHandler($("#unhide-post-" + postId));
-
-            var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
-
-            if (isListEmpty(hiddenIdsWithDates)) {
-                hiddenIdsWithDates = [];
-            }
-
-            var hiddenIds = getHiddenIdsFromCookieList(hiddenIdsWithDates);
-
-            if (hiddenIds.indexOf(postId) === -1) {
-                hiddenIdsWithDates.push([postId, Date.now() / 1000 / 60 / 60 / 24].join("|"));
-            }
-
-            createCookie("hidden_ids", hiddenIdsWithDates.join(","), 1);
+        undoButton.click(function() {
+            addUndoButtonClickHandler($(this), postId, post);
         });
 
-        $(this).find("div > .author.ellipsis").children().eq(2).after(button);
+        post.after(undoButton);
+    }
+    
+    post.css("display", "none");
+
+    $("#unhide-menu-list").append($(createUnhideListItemCode(postId)));
+    addUnhideMenuButtonClickHandler($("#unhide-post-" + postId));
+
+    var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
+
+    if (isListEmpty(hiddenIdsWithDates)) {
+        hiddenIdsWithDates = [];
+    }
+
+    var hiddenIds = getHiddenIdsFromCookieList(hiddenIdsWithDates);
+
+    if (hiddenIds.indexOf(postId) === -1) {
+        hiddenIdsWithDates.push([postId, Date.now() / 1000 / 60 / 60 / 24].join("|"));
+    }
+
+    createCookie("hidden_ids", hiddenIdsWithDates.join(","), 1);
+}
+
+function addTopHideButtons() {
+    $(".entry.iC > div.dC").each(function () {
+        var postId = $(this).attr("data-id");
+        
+        var topButton = $('<button class="button mikro" style="margin-left: 5px;">Ukryj wpis</button>');
+
+        topButton.click(function () {
+            return hideButtonClickHandler(postId, true);
+        });
+
+        $(this).find("div > .author.ellipsis").children().eq(2).after(topButton);
     });
+}
+
+function addBottomHideButton(postBodyDiv) {
+    var bottomButton = $('<button class="button mikro" style="margin-left: 10px; margin-bottom: 10px;">Ukryj wpis</button>');
+    bottomButton.click(function () {
+        return hideButtonClickHandler(postBodyDiv.attr("data-id"), false);
+    });
+    postBodyDiv.siblings().last().after(bottomButton);
 }
 
 function triggerLazyLoad() {
@@ -274,6 +291,12 @@ function removeOldCookieElements(hiddenIdsWithDates) {
     return newHiddenIdsWithDates;
 }
 
+function addShowMoreCommentsClickHandler() {
+    $("p.more > a").click(function() {
+        addBottomHideButton($(this).parent().parent().siblings().eq(0));
+    });
+}
+
 $(document).ready(function () {
     var hiddenIdsWithDates = getCookie("hidden_ids").split(",");
 
@@ -291,5 +314,6 @@ $(document).ready(function () {
     triggerLazyLoad();
 
     addMainScriptButton();
-    addHideButtons();
+    addTopHideButtons();
+    addShowMoreCommentsClickHandler();
 });
