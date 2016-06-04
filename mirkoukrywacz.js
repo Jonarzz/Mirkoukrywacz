@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Mirkoukrywacz
 // @namespace    wykophidepost
-// @version      1.0.3
+// @version      1.0.4
 // @description  Skrypt dodający na Mikroblogu Wykop.pl przycisk pozwalający na ukrywanie wpisów.
 // @author       zranoI
 // @include      /^https?:\/\/.*wykop\.pl\/mikroblog.*/
@@ -229,6 +229,10 @@ function hideButtonClickHandler(postId, addUndo) {
         });
 
         post.after(undoButton);
+    } else {
+        $('html, body').animate({
+            scrollTop: post.offset().top - 50
+        }, 0);
     }
     
     post.css("display", "none");
